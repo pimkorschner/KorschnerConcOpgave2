@@ -39,12 +39,15 @@ public class OverlegRuimte {
 		public void run() {
 			// TODO Auto-generated method stub
 			super.run();
+			while(true) {
+				knapUiltje();
+			}
 		}
 		
 		private void knapUiltje() {
 			System.out.println("Sinterklaas doet een tukje");
 			try {
-				Thread.sleep((int)(Math.random() * 1000));
+				Thread.sleep((int)(Math.random() * 10000));
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -54,7 +57,7 @@ public class OverlegRuimte {
 		private void startMeeting() {
 			System.out.println("Sinterklaas start een overleg");
 			try {
-				Thread.sleep((int)(Math.random() * 1000));
+				Thread.sleep((int)(Math.random() * 10000));
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -95,7 +98,7 @@ public class OverlegRuimte {
 		private void verzamel() {
 			System.out.println("Verzamelpiet " + id + " is aan het verzamelen");
 			try {
-				Thread.sleep((int)(Math.random() * 1000));
+				Thread.sleep((int)(Math.random() * 10000));
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
