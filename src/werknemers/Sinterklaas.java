@@ -27,4 +27,12 @@ public class Sinterklaas extends Thread {
 		}
 	}
 	
+	private void verzamelOverleg() {
+		
+	}
+	
+	private void werkOverleg() {
+		
+	}
+	
 }
