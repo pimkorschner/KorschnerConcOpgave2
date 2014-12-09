@@ -52,6 +52,10 @@ public class OverlegRuimte {
 			// TODO Auto-generated method stub
 			super.run();
 			while(true) {
+				
+				//psuedoshit
+				//als er 3 verzamelpieten en 1 werkpiet is dan: verzameloverleg
+				
 				System.out.println("werkwacht is: " + werkWacht.getQueueLength());
 				werkWacht.release();
 				System.out.println("na release werkwacht: " + werkWacht.getQueueLength());
