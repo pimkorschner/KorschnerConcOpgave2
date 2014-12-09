@@ -12,8 +12,13 @@ public class VerzamelPiet extends Thread {
 	
 	@Override
 	public void run() {
-		// TODO Auto-generated method stub
 		super.run();
+		while(true) {
+			verzamel();
+			
+			//piet meld zich hier bij de sint. 
+			
+		}
 	}
 	
 	private void verzamel() {

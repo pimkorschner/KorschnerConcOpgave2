@@ -13,6 +13,11 @@ public class WerkPiet extends Thread {
 	public void run() {
 		// TODO Auto-generated method stub
 		super.run();
+		while(true) {
+			werk();
+			
+			//hier melden bij de sint
+		}
 	}
 	
 	private void werk() {
