@@ -32,7 +32,7 @@ public class OverlegRuimte {
 		verzamelOverleg = new Semaphore(0, true); //niet meteen een overleg bezig
 		werkOverleg = new Semaphore(0, true); //niet meteen een overleg bezig
 		
-		werkpiet[0] = new WerkPiet("wp" + 1, 1, ZWART); //om zeker te weten dat er in ieder geval 1 zwarte piet is.
+		werkpiet[0] = new WerkPiet("wp" + 0, 0, ZWART); //om zeker te weten dat er in ieder geval 1 zwarte piet is.
 		for(int i = 1; i < NR_WERKPIETEN; i++) {
 			werkpiet[i] = new WerkPiet("wp" + i, i, (int)(Math.random()*4+1));
 			werkpiet[i].start();
