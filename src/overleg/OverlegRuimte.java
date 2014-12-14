@@ -110,17 +110,18 @@ public class OverlegRuimte {
 						 * Voor dat het overleg begint eerst de werkpieten weer aan het werk zetten. 
 						 */
 						mutexWerk.acquire();
-						int tempWerkPieten = werkPietenInRij;
-						werkOverleg.release(tempWerkPieten);
+						meldSintWerk.acquire(werkPietenInRij);
+						werkOverleg.release(werkPietenInRij);
 						werkPietenInRij = 0;
 						mutexWerk.release();
 						
 						verzamelOverleg();
 						
-						verzamelOverleg.release(verzamelPietenInMeeting + 1); //+1 voor de zwarte werkpiet
+						mutexZwart.acquire();
+						verzamelOverleg.release(verzamelPietenInMeeting); //verzamelpieten weer wegsturen
+						verzamelOverlegZwart.release(1); //zwarte piet weer aan het werk
 						
 						//De wachtrij voor zwarte werkpieten naar 0 zodat zwarte werkpieten weer aan kunnen sluiten
-						mutexZwart.acquire();
 						werkPietZwartRij = 0;
 						mutexZwart.release();
 						overlegBezig = false;
@@ -131,6 +132,16 @@ public class OverlegRuimte {
 					
 					if(meldSintWerk.tryAcquire(3)) { //zodra er 3 werkpieten aanwezig zijn start de werkpiet meeting
 						overlegBezig = true;
+						
+						//zwarte piet weer aan het werk zetten.
+						mutexZwart.acquire();
+						if(werkPietZwartRij == 1) {
+							meldSintWerkZwart.acquire(1);
+							verzamelOverlegZwart.release(1);
+							werkPietZwartRij = 0;
+						}
+						mutexZwart.release();
+						
 						System.out.println("3 werkpieten beschikbaar");
 						werkOverleg();
 						werkOverleg.release(3);
@@ -203,7 +214,7 @@ public class OverlegRuimte {
 								System.out.println(getName() + " staat in de zwarte rij");
 								meldSintWerkZwart.release(1);
 //								werkpietZwart.acquire();
-								verzamelOverleg.acquire();
+								verzamelOverlegZwart.acquire();
 								System.out.println(getName() + " gaat weer aan het werk");
 //								sintDutje.acquire();
 							} else {
@@ -238,8 +249,7 @@ public class OverlegRuimte {
 
 		private void werk() {
 			try {
-				System.out.println(getName() + " is aan het werk en is kleur: "
-						+ kleur);
+//				System.out.println(getName() + " is aan het werk en is kleur: " + kleur);
 				Thread.sleep((int) (Math.random() * 10000));
 			} catch (InterruptedException e) {
 				e.printStackTrace();
@@ -283,7 +293,7 @@ public class OverlegRuimte {
 		}
 
 		private void verzamel() {
-			System.out.println(getName() + " is aan het verzamelen");
+//			System.out.println(getName() + " is aan het verzamelen");
 			try {
 				Thread.sleep((int) (Math.random() * 10000));
 			} catch (InterruptedException e) {
