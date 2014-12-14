@@ -3,8 +3,16 @@ package overleg;
 import java.util.Random;
 import java.util.concurrent.Semaphore;
 
-import sun.org.mozilla.javascript.internal.ast.TryStatement;
-
+/**
+ * afkortingen: 
+ * 	- wp = werkpiet
+ *  - wpz = zwarte werkpiet
+ *  
+ *  - vp = verzamelpiet
+ * 
+ * @author Pim
+ *
+ */
 public class OverlegRuimte {
 	private Random random;
 
@@ -16,49 +24,38 @@ public class OverlegRuimte {
 	private static final int NR_WERKPIETEN = 8;
 	private static final int NR_VERZAMELPIETEN = 8;
 
-	private static final int WERKPIETENRIJ = 3;
-	private static final int VERZAMELPIETENRIJ = 8;
-
-	private int werkPietZwartRij = 0;
-	private int werkPietenInRij = 0;
-	private int verzamelPietenInRij = 0;
+	private int wpzRij = 0;
+	private int wpRij = 0;
+	private int vpRij = 0;
 
 	private Thread[] werkpiet;
 	private Thread[] verzamelpiet;
 
-	private Semaphore werkpietZwart, werkWacht, verzamelWacht, overleg,
-			verzamelOverleg, werkOverleg, sintDutje, verzamelOverlegZwart;
+	private Semaphore verzamelOverleg, werkOverleg, verzamelOverlegWpz;
 	
-	private Semaphore meldSintWerk, meldSintVerzamel, meldSintWerkZwart;
+	private Semaphore meldSintWp, meldSintVp, meldSintWpz;
 
-	private Semaphore mutexZwart, mutexWerk, mutexVerzamel;
+	private Semaphore mutexWpz, mutexWp, mutexVp;
 	
 	private boolean overlegBezig = false;
 
 	public OverlegRuimte() {
 		random = new Random();
 
-		meldSintWerk = new Semaphore(0, true);
-		meldSintVerzamel = new Semaphore(0, true);
-		meldSintWerkZwart = new Semaphore(0, true);
+		meldSintWp = new Semaphore(0, true);
+		meldSintVp = new Semaphore(0, true);
+		meldSintWpz = new Semaphore(0, true);
 		
-		mutexZwart = new Semaphore(1);
-		mutexWerk = new Semaphore(1);
-		mutexVerzamel = new Semaphore(1);
+		mutexWpz = new Semaphore(1);
+		mutexWp = new Semaphore(1);
+		mutexVp = new Semaphore(1);
 
 		werkpiet = new Thread[NR_WERKPIETEN];
 		verzamelpiet = new Thread[NR_VERZAMELPIETEN];
 
-		werkpietZwart = new Semaphore(1, true); // geen zwarte piet aanwezig
-
-		sintDutje = new Semaphore(0, true); // sint begint slapend
-
-		werkWacht = new Semaphore(3, true); // deze kan 3 lang zijn
-		verzamelWacht = new Semaphore(NR_VERZAMELPIETEN, true);
-
 		verzamelOverleg = new Semaphore(0, true); //niet meteen een overleg bezig
 		werkOverleg = new Semaphore(0, true); // niet meteen een overleg bezig
-		verzamelOverlegZwart = new Semaphore(0, true); //1 voor de zwarte piet, zodat deze terug aan het werk gezet kan worden zodra er een werkoverleg is
+		verzamelOverlegWpz = new Semaphore(0, true); //1 voor de zwarte piet, zodat deze terug aan het werk gezet kan worden zodra er een werkoverleg is
 
 		werkpiet[0] = new WerkPiet("wp" + 0, 0, ZWART); // om zeker te weten dat
 														// er in ieder geval 1
@@ -80,76 +77,69 @@ public class OverlegRuimte {
 	class Sinterklaas extends Thread {
 		@Override
 		public void run() {
-			// TODO Auto-generated method stub
 			super.run();
 			System.out.println("De sint is alive!");
 			while (true) {
-				// psuedoshit
-				// als er 3 verzamelpieten en 1 werkpiet is dan: verzameloverleg
-				// werkpieten gebeuren eerst doen, dus: als er geen
-				// verzamelpieten zijn of 3 werkpieten (met of zonder zwarte)
-				// dan begin een werkoverleg
-
 				try {
-					mutexVerzamel.acquire();
-					mutexZwart.acquire();
-					if(verzamelPietenInRij >= 3 && werkPietZwartRij == 1) {
+					mutexVp.acquire();
+					mutexWpz.acquire();
+					if(vpRij >= 3 && wpzRij == 1) {
 						overlegBezig = true;
-						int verzamelPietenInMeeting = verzamelPietenInRij;
+						int verzamelPietenInMeeting = vpRij;
 						
-						meldSintVerzamel.acquire(verzamelPietenInRij);
-						meldSintWerkZwart.acquire(1);
+						meldSintVp.acquire(vpRij);
+						meldSintWpz.acquire(1);
 						
 						//de wachtrij weer naar 0 zetten zodat nieuwe verzamelpieten bij het overleg kunnen komen.
-						verzamelPietenInRij = 0;
+						vpRij = 0;
 						
-						mutexVerzamel.release();
-						mutexZwart.release();
+						mutexVp.release();
+						mutexWpz.release();
 						
 						/*
-						 * Voor dat het overleg begint eerst de werkpieten weer aan het werk zetten. 
+						 * werkpieten weer aan het werk zetten.
 						 */
-						mutexWerk.acquire();
-						meldSintWerk.acquire(werkPietenInRij);
-						werkOverleg.release(werkPietenInRij);
-						werkPietenInRij = 0;
-						mutexWerk.release();
+						mutexWp.acquire();
+						meldSintWp.acquire(wpRij);
+						werkOverleg.release(wpRij);
+						wpRij = 0;
+						mutexWp.release();
 						
 						verzamelOverleg();
 						
-						mutexZwart.acquire();
+						mutexWpz.acquire();
 						verzamelOverleg.release(verzamelPietenInMeeting); //verzamelpieten weer wegsturen
-						verzamelOverlegZwart.release(1); //zwarte piet weer aan het werk
+						verzamelOverlegWpz.release(1); //zwarte piet weer aan het werk
 						
 						//De wachtrij voor zwarte werkpieten naar 0 zodat zwarte werkpieten weer aan kunnen sluiten
-						werkPietZwartRij = 0;
-						mutexZwart.release();
+						wpzRij = 0;
+						mutexWpz.release();
 						overlegBezig = false;
 					} else {
-						mutexVerzamel.release(); //om zeker te zijn dat er gereleased wordt
-						mutexZwart.release();
+						mutexVp.release(); //om zeker te zijn dat er gereleased wordt
+						mutexWpz.release();
 					}
 					
-					if(meldSintWerk.tryAcquire(3)) { //zodra er 3 werkpieten aanwezig zijn start de werkpiet meeting
+					if(meldSintWp.tryAcquire(3)) { //zodra er 3 werkpieten aanwezig zijn start de werkpiet meeting
 						overlegBezig = true;
 						
 						//zwarte piet weer aan het werk zetten.
-						mutexZwart.acquire();
-						if(werkPietZwartRij == 1) {
-							meldSintWerkZwart.acquire(1);
-							verzamelOverlegZwart.release(1);
-							werkPietZwartRij = 0;
+						mutexWpz.acquire();
+						if(wpzRij == 1) {
+							meldSintWpz.acquire(1);
+							verzamelOverlegWpz.release(1);
+							wpzRij = 0;
 						}
-						mutexZwart.release();
+						mutexWpz.release();
 						
 						System.out.println("3 werkpieten beschikbaar");
 						werkOverleg();
 						werkOverleg.release(3);
 						
 						/*Dit is er zodat er niet meer dan 3 werkpieten gaan wachten op een meeting*/
-						mutexWerk.acquire();
-						werkPietenInRij = 0;
-						mutexWerk.release();
+						mutexWp.acquire();
+						wpRij = 0;
+						mutexWp.release();
 						overlegBezig = false;
 					}
 				} catch (InterruptedException e2) {
@@ -203,38 +193,38 @@ public class OverlegRuimte {
 				try {
 					werk();
 					if(!overlegBezig) {
-						if (kleur == ZWART && werkPietZwartRij < 1) {
+						if (kleur == ZWART && wpzRij < 1) {
 							// zwarte piet, dus proberen in de rij voor zwarte
 							// pieten te komen
-							mutexZwart.acquire();
-							if (werkPietZwartRij < 1) {
-								werkPietZwartRij++;
-								mutexZwart.release();
+							mutexWpz.acquire();
+							if (wpzRij < 1) {
+								wpzRij++;
+								mutexWpz.release();
 								
 								System.out.println(getName() + " staat in de zwarte rij");
-								meldSintWerkZwart.release(1);
+								meldSintWpz.release(1);
 //								werkpietZwart.acquire();
-								verzamelOverlegZwart.acquire();
+								verzamelOverlegWpz.acquire();
 								System.out.println(getName() + " gaat weer aan het werk");
 //								sintDutje.acquire();
 							} else {
-								mutexZwart.release();
+								mutexWpz.release();
 							}
 						} else {
 							// gekleurde pieten gaan hier naartoe
 							//overige zwarte pieten ook, die knakkers zijn slim dus gaan wachten op een andere meeting i.p.v. werken
-							mutexWerk.acquire();
-							if (werkPietenInRij < 3) {
+							mutexWp.acquire();
+							if (wpRij < 3) {
 								// er is nog ruimte in de rij voor werkpieten
-								werkPietenInRij++;
-								mutexWerk.release();
+								wpRij++;
+								mutexWp.release();
 								
 								System.out.println(getName() + " staat in de kleur rij");
-								meldSintWerk.release(1);
+								meldSintWp.release(1);
 								werkOverleg.acquire();
 								System.out.println(getName() + " gaat weer aan het werk");
 							} else {
-								mutexWerk.release();
+								mutexWp.release();
 							}
 
 						}
@@ -267,6 +257,7 @@ public class OverlegRuimte {
 			// TODO Auto-generated constructor stub
 			super(name);
 			this.id = id;
+			this.kleur = kleur;
 		}
 
 		@Override
@@ -275,12 +266,12 @@ public class OverlegRuimte {
 			while (true) {
 				verzamel();
 				try {
-					mutexVerzamel.acquire();
-					verzamelPietenInRij++;
-					mutexVerzamel.release();
+					mutexVp.acquire();
+					vpRij++;
+					mutexVp.release();
 					
 					System.out.println(getName() + " staat in de rij voor het verzamel overleg");
-					meldSintVerzamel.release(1);
+					meldSintVp.release(1);
 					
 					verzamelOverleg.acquire();
 					System.out.println(getName() + " gaat weer verzamelen");
