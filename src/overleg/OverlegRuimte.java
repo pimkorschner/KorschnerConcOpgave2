@@ -126,6 +126,7 @@ public class OverlegRuimte {
 						mutexWpz.release();
 					}
 					
+					mutexWp.acquire();
 					if(meldSintWp.tryAcquire(3)) { //zodra er 3 werkpieten aanwezig zijn start de werkpiet meeting
 						overlegBezig = true;
 						
@@ -143,10 +144,12 @@ public class OverlegRuimte {
 						werkOverleg.release(3);
 						
 						/*Dit is er zodat er niet meer dan 3 werkpieten gaan wachten op een meeting*/
-						mutexWp.acquire();
+//						mutexWp.acquire();
 						wpRij = 0;
 						mutexWp.release();
 						overlegBezig = false;
+					} else {
+						mutexWp.release();
 					}
 				} catch (InterruptedException e2) {
 					// TODO Auto-generated catch block
