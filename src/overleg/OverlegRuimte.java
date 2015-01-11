@@ -37,10 +37,14 @@ public class OverlegRuimte {
 
 	private Semaphore mutexWpz, mutexWp, mutexVp;
 	
+	private Semaphore slaap;
+	
 	private boolean overlegBezig = false;
 
 	public OverlegRuimte() {
 		random = new Random();
+		
+		slaap = new Semaphore(0);
 
 		meldSintWp = new Semaphore(0, true);
 		meldSintVp = new Semaphore(0, true);
@@ -81,6 +85,8 @@ public class OverlegRuimte {
 			System.out.println("De sint is alive!");
 			while (true) {
 				try {
+					slaap.acquire();
+					System.out.println("De sint is busy!");
 					mutexVp.acquire();
 					mutexWpz.acquire();
 					if(vpRij >= 3 && wpzRij == 1) {
@@ -204,6 +210,11 @@ public class OverlegRuimte {
 								System.out.println(getName() + " staat in de zwarte rij");
 								meldSintWpz.release(1);
 //								werkpietZwart.acquire();
+								
+								/**
+								 * Hier de sint wakker maken.
+								 */
+								slaap.release();
 								verzamelOverlegWpz.acquire();
 								System.out.println(getName() + " gaat weer aan het werk");
 //								sintDutje.acquire();
@@ -221,6 +232,10 @@ public class OverlegRuimte {
 								
 								System.out.println(getName() + " staat in de kleur rij");
 								meldSintWp.release(1);
+								/**
+								 * Hier de sint wakker maken. 
+								 */
+								slaap.release();
 								werkOverleg.acquire();
 								System.out.println(getName() + " gaat weer aan het werk");
 							} else {
@@ -273,6 +288,10 @@ public class OverlegRuimte {
 					System.out.println(getName() + " staat in de rij voor het verzamel overleg");
 					meldSintVp.release(1);
 					
+					/**
+					 * Hier de sint wakker maken. 
+					 */
+					slaap.release();
 					verzamelOverleg.acquire();
 					System.out.println(getName() + " gaat weer verzamelen");
 				} catch (InterruptedException e) {
